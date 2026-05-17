@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralSync Pro | Ultra Matrix</title>
+    
+    <!-- React & ReactDOM (Production Core) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel Translator for inline JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #020617; 
+            color: #f8fafc; 
+            margin: 0; 
+            padding: 0; 
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 10% 40%, rgba(99, 102, 241, 0.06), transparent 30%),
+                              radial-gradient(circle at 90% 70%, rgba(16, 185, 129, 0.06), transparent 30%);
+        }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            // --- TELEMETRY DATA REGISTERS ---
+            const [totalRuntime, setTotalRuntime] = useState(() => parseInt(localStorage.getItem('ns_v4_total') || '0', 10));
+            const [activeSession, setActiveSession] = useState(() => parseInt(localStorage.getItem('ns_v4_active') || '0', 10));
+            const [backgroundCycles, setBackgroundCycles] = useState(() => parseInt(localStorage.getItem('ns_v4_back') || '0', 10));
+            
+            const [clicks, setClicks] = useState(() => parseInt(localStorage.getItem('ns_v4_clicks') || '0', 10));
+            const [keystrokes, setKeystrokes] = useState(() => parseInt(localStorage.getItem('ns_v4_keys') || '0', 10));
+            const [scrolls, setScrolls] = useState(() => parseInt(localStorage.getItem('ns_v4_scrolls') || '0', 10));
+            const [matrixTier, setMatrixTier] = useState(() => parseInt(localStorage.getItem('ns_v4_tier') || '1', 10));
+
+            // --- FOCUS MINIGAME ENGINE ---
+            const [gameActive, setGameActive] = useState(false);
+            const [gameScore, setGameScore] = useState(0);
+            const [targetPos, setTargetPos] = useState({ top: '40%', left: '40%' });
+
+            // --- TO-DO SYSTEM ---
+            const [todos, setTodos] = useState(() => {
+                const cached = localStorage.getItem('ns_v4_todos');
+                return cached ? JSON.parse(cached) : [
+                    { id: 1, text: "Break past Matrix Grid Tier 1 Threshold", completed: false },
+                    { id: 2, text: "Achieve a 10+ score in the Neuro-Tracker Game", completed: false }
+                ];
+            });
+            const [newTodoText, setNewTodoText] = useState('');
+
+            const [focusTime, setFocusTime] = useState(1500);
+            const [isFocusing, setIsFocusing] = useState(false);
+            const [isUserIdle, setIsUserIdle] = useState(false);
+            const [lastAction, setLastAction] = useState('Core Operational');
+
+            const canvasRef = useRef(null);
+            const lastInputTimestamp = useRef(Date.now());
+
+            // --- LOCAL STORAGE DATA SYNC ---
+            useEffect(() => {
+                localStorage.setItem('ns_v4_total', totalRuntime);
+                localStorage.setItem('ns_v4_active', activeSession);
+                localStorage.setItem('ns_v4_back', backgroundCycles);
+                localStorage.setItem('ns_v4_clicks', clicks);
+                localStorage.setItem('ns_v4_keys', keystrokes);
+                localStorage.setItem('ns_v4_scrolls', scrolls);
+                localStorage.setItem('ns_v4_tier', matrixTier);
+                localStorage.setItem('ns_v4_todos', JSON.stringify(todos));
+            }, [totalRuntime, activeSession, backgroundCycles, clicks, keystrokes, scrolls, matrixTier, todos]);
+
+            // --- NOTIFICATIONS MANAGER ---
+            useEffect(() => {
+                if ("Notification" in window && Notification.permission === "default") {
+                    Notification.requestPermission();
+                }
+            }, []);
+
+            const triggerOSNotification = (title, message) => {
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification(title, { body: message });
+                }
+            };
+
+            // --- ACTUAL CANVAS PIE CHART CONTROLLER ---
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                
+                // Clear and setup High-DPI sizing
+                ctx.clearRect(0, 0, 200, 200);
+                
+                const total = Math.max(activeSession + backgroundCycles, 1);
+                const activeAngle = (activeSession / total) * 2 * Math.PI;
+                const backgroundAngle = (backgroundCycles / total) * 2 * Math.PI;
+
+                const centerX = 100;
+                const centerY = 100;
+                const radius = 75;
+
+                // 1. Draw Active Session Slice (Indigo)
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + activeAngle);
+                ctx.lineTo(centerX, centerY);
+                ctx.fillStyle = '#6366f1';
+                ctx.fill();
+
+                // 2. Draw Background Slice (Purple / Slate)
+                if (backgroundCycles > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, -Math.PI / 2 + activeAngle, -Math.PI / 2 + activeAngle + backgroundAngle);
+                    ctx.lineTo(centerX, centerY);
+                    ctx.fillStyle = '#a855f7';
+                    ctx.fill();
+                } else {
+                    // Empty state fallback background ring circle
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = 'rgba(99, 102, 241, 0.15)';
+                    ctx.stroke();
+                }
+
+                // Inner Cutout Hole for Premium Finish Donut-style look
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 48, 0, 2 * Math.PI);
+                ctx.fillStyle = '#090d22';
+                ctx.fill();
+
+            }, [activeSession, backgroundCycles]);
+
+            // --- INPUT DETECTION REGISTERS ---
+            useEffect(() => {
+                const markInputActivity = () => {
+                    lastInputTimestamp.current = Date.now();
+                    setIsUserIdle(false);
+                };
+
+                const handleClick = () => { setClicks(c => c + 1); setLastAction('Click Intercepted'); markInputActivity(); };
+                const handleKey = () => { setKeystrokes(k => k + 1); setLastAction('Key Matrix Registered'); markInputActivity(); };
+                const handleScroll = () => { setScrolls(s => s + 1); setLastAction('Scroll Delta Saved'); markInputActivity(); };
+
+                window.addEventListener('mousemove', markInputActivity);
+                window.addEventListener('mousedown', handleClick);
+                window.addEventListener('keydown', handleKey);
+                window.addEventListener('scroll', handleScroll);
+
+                return () => {
+                    window.removeEventListener('mousemove', markInputActivity);
+                    window.removeEventListener('mousedown', handleClick);
+                    window.removeEventListener('keydown', handleKey);
+                    window.removeEventListener('scroll', handleScroll);
+                };
+            }, []);
+
+            // --- BACKGROUND MULTI-THREAD WORKER LOOP ---
+            useEffect(() => {
+                const workerBlobCode = `
+                    let loopId = null;
+                    self.onmessage = function(msg) {
+                        if (msg.data === 'INITIALIZE') {
+                            if (!loopId) {
+                                loopId = setInterval(() => { self.postMessage('TICK_EVENT'); }, 1000);
+                            }
+                        } else if (msg.data === 'TERMINATE') {
+                            clearInterval(loopId);
+                            loopId = null;
+                        }
+                    };
+                `;
+                const blobObject = new Blob([workerBlobCode], { type: 'application/javascript' });
+                const workerThread = new Worker(URL.createObjectURL(blobObject));
+                workerThread.postMessage('INITIALIZE');
+
+                workerThread.onmessage = function(e) {
+                    if (e.data === 'TICK_EVENT') {
+                        setTotalRuntime(prev => prev + 1);
+
+                        if (document.hidden) {
+                            setBackgroundCycles(prev => prev + 1);
+                        } else {
+                            const delay = Date.now() - lastInputTimestamp.current;
+                            if (delay > 8000) {
+                                setIsUserIdle(true);
+                            } else {
+                                setIsUserIdle(false);
+                                setActiveSession(prev => prev + 1);
+                            }
+                        }
+
+                        setIsFocusing(running => {
+                            if (running) {
+                                setFocusTime(t => (t <= 1 ? 1500 : t - 1));
+                            }
+                            return running;
+                        });
+                    }
+                };
+
+                return () => {
+                    workerThread.postMessage('TERMINATE');
+                    workerThread.terminate();
+                };
+            }, []);
+
+            // --- DYNAMIC INF-SQUARE CAPACITY MATRIX LOGIC ---
+            const totalActivityVolume = clicks + keystrokes + gameScore;
+            const currentGridProgress = totalActivityVolume % 64;
+
+            // Detect if a complete matrix block cycle just filled up completely
+            useEffect(() => {
+                if (totalActivityVolume > 0 && currentGridProgress === 0) {
+                    setMatrixTier(prev => {
+                        const nextTier = prev + 1;
+                        triggerOSNotification(`🚀 MATRIX TIER UPGRADE!`, `Sensory grid completed! You advanced to Matrix Processing Tier ${nextTier}. Keep focusing!`);
+                        return nextTier;
+                    });
+                }
+            }, [totalActivityVolume, currentGridProgress]);
+
+            // --- HIGH-FOCUS FOCUS GAME ENGINE ---
+            const shiftTargetNode = () => {
+                const randTop = Math.floor(Math.random() * 75) + 10;
+                const randLeft = Math.floor(Math.random() * 75) + 10;
+                setTargetPos({ top: `${randTop}%`, left: `${randLeft}%` });
+            };
+
+            const triggerGameStart = () => {
+                setGameActive(true);
+                setGameScore(0);
+                shiftTargetNode();
+            };
+
+            const handleTargetClick = (e) => {
+                e.stopPropagation(); // prevent adding extra click counts from dashboard
+                setGameScore(prev => {
+                    const nextScore = prev + 1;
+                    if (nextScore >= 10) {
+                        // Mark task complete dynamically if active
+                        setTodos(tList => tList.map(t => t.id === 2 ? { ...t, completed: true } : t));
+                    }
+                    return nextScore;
+                });
+                shiftTargetNode();
+            };
+
+            // --- INTERNALS HELPERS ---
+            const renderTime = (sec) => {
+                const hours = Math.floor(sec / 3600);
+                const minutes = Math.floor((sec % 3600) / 60);
+                const seconds = sec % 60;
+                return `${hours > 0 ? hours + 'h ' : ''}${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+            };
+
+            const handleCheckboxToggle = (id, text, wasDone) => {
+                setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+                if (!wasDone) triggerOSNotification("Task Cleared! 🎉", `Accomplished parameters: "${text}"`);
+            };
+
+            const addNewTask = (e) => {
+                e.preventDefault();
+                if (!newTodoText.trim()) return;
+                setTodos(prev => [...prev, { id: Date.now(), text: newTodoText, completed: false }]);
+                setNewTodoText('');
+            };
+
+            // Determine active color style theme based on what Matrix level Tier you are on
+            const getTierColorStyle = () => {
+                if (matrixTier === 1) return 'from-indigo-500 to-cyan-500 text-indigo-400 border-indigo-500/30';
+                if (matrixTier === 2) return 'from-purple-500 to-pink-500 text-purple-400 border-purple-500/30';
+                return 'from-amber-500 to-orange-500 text-amber-400 border-amber-500/30';
+            };
+
+            return (
+                <div className="min-h-screen p-4 md:p-8 flex flex-col justify-between">
+                    
+                    {/* APP HEADER */}
+                    <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20 flex items-center justify-center font-bold text-white">N</div>
+                            <div>
+                                <h1 className="text-lg font-bold tracking-tight text-white">NeuralSync Matrix</h1>
+                                <p className="text-[11px] font-mono text-slate-400 uppercase tracking-wider mt-0.5">Real-Time Canvas Processing Analytics</p>
+                            </div>
+                        </div>
+                        <span className={`text-xs font-mono font-bold uppercase px-3 py-1 bg-gradient-to-r rounded-xl border ${getTierColorStyle()}`}>
+                            Matrix Level Tier: {matrixTier}
+                        </span>
+                    </header>
+
+                    {/* TWO COLUMN GRID LAYOUT FRAME */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-stretch">
+                        
+                        {/* LEFT COLUMN: VISUAL REAL PIE CHART & MATRIX SQUARE */}
+                        <div className="lg:col-span-7 flex flex-col gap-6">
+                            
+                            {/* CANVAS HOOK LIVE PIE CHART DESIGN */}
+                            <div className="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-around gap-6">
+                                <div className="relative w-[200px] h-[200px]">
+                                    <canvas ref={canvasRef} width="200" height="200" className="mx-auto" />
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                                        <span className="text-2xl font-bold font-mono text-white">
+                                            {Math.round((activeSession / Math.max(totalRuntime, 1)) * 100)}%
+                                        </span>
+                                        <span className="text-[9px] uppercase tracking-widest text-slate-500 font-mono font-medium">Uptime Split</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 font-mono text-xs flex-1 w-full">
+                                    <h3 className="text-sm font-sans font-medium text-slate-300">Pie Segment Split Metrics</h3>
+                                    <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                                        <span className="text-indigo-400 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> Active Focused Frame</span>
+                                        <span className="text-white font-bold">{renderTime(activeSession)}</span>
+                                    </div>
+                                    <div className="flex justify-between border-b border-slate-800/80 pb-1.5">
+                                        <span className="text-purple-400 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Away / Hidden Tab</span>
+                                        <span className="text-white font-bold">{renderTime(backgroundCycles)}</span>
+                                    </div>
+                                    <div className="flex justify-between pt-1">
+                                        <span className="text-slate-500">Total System Lifetime</span>
+                                        <span className="text-slate-300">{renderTime(totalRuntime)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* THE INCREMENTAL MATRIX CAPACITY BLOCKS SQUARE */}
+                            <div className="glass-panel rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-center">
+                                <div className="w-full md:w-5/12 space-y-3">
+                                    <div>
+                                        <h3 className="text-sm font-medium text-slate-200">Capacity Upgrading Matrix</h3>
+                                        <p className="text-xs text-slate-500 font-mono mt-1">
+                                            Fills box by box. Upon hitting 64 blocks, it cleanses, upgrades your level rank tier, and changes frequency color!
+                                        </p>
+                                    </div>
+                                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 font-mono text-xs flex justify-between items-center">
+                                        <span className="text-slate-400">Current Grid Vol:</span>
+                                        <span className="text-white font-bold text-sm">{currentGridProgress} / 64</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-center font-mono text-[11px]">
+                                        <div className="p-2 bg-slate-950 rounded-lg border border-slate-900 text-slate-400">Clicks: <b className="text-white">{clicks}</b></div>
+                                        <div className="p-2 bg-slate-950 rounded-lg border border-slate-900 text-slate-400">Keys: <b className="text-white">{keystrokes}</b></div>
+                                    </div>
+                                </div>
+
+                                {/* GRAPHICAL PHYSICAL BLOCK GRID MESH */}
+                                <div className="w-full md:w-7/12 flex items-center justify-center p-3 bg-slate-950/50 rounded-xl border border-slate-900">
+                                    <div className="grid grid-cols-8 gap-1.5">
+                                        {Array.from({ length: 64 }).map((_, idx) => {
+                                            const isFilled = idx < currentGridProgress;
+                                            let fillBg = 'bg-slate-800/40 border border-slate-700/20';
+                                            
+                                            if (isFilled) {
+                                                if (matrixTier === 1) fillBg = 'bg-gradient-to-br from-indigo-500 to-cyan-500 shadow-[0_0_8px_rgba(99,102,241,0.3)]';
+                                                else if (matrixTier === 2) fillBg = 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-[0_0_8px_rgba(168,85,247,0.3)]';
+                                                else fillBg = 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]';
+                                            }
+
+                                            return (
+                                                <div 
+                                                    key={idx} 
+                                                    className={`w-6 h-6 rounded-md transition-all duration-200 ${fillBg}`}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* RIGHT COLUMN: ATTENTION-SPAN TRAINING GAME & TODOS */}
+                        <div className="lg:col-span-5 flex flex-col gap-6">
+                            
+                            {/* HIGH-FOCUS ATTENTION FOCUS REFLEX GAME CARD */}
+                            <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col min-h-[220px]">
+                                <div className="flex justify-between items-center mb-3">
+                                    <div>
+                                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-emerald-400">Neuro-Tracker Matrix</h3>
+                                        <p className="text-[11px] text-slate-400 font-sans">Click expanding target node matrix points to cultivate deep eye-tracking focus spans.</p>
+                                    </div>
+                                    {gameActive && <span className="text-xs font-mono font-bold text-white bg-slate-950 px-2 py-0.5 rounded border border-slate-800">Hits: {gameScore}</span>}
+                                </div>
+
+                                <div className="flex-1 relative bg-slate-950/80 rounded-xl border border-slate-900 overflow-hidden min-h-[120px]">
+                                    {!gameActive ? (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center space-y-2">
+                                            <button 
+                                                onClick={triggerGameStart}
+                                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-semibold rounded-xl tracking-wide uppercase shadow-lg shadow-emerald-600/10 transition-colors"
+                                            >
+                                                Initialize Training Grid
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={handleTargetClick}
+                                            style={{ top: targetPos.top, left: targetPos.left }}
+                                            className="absolute w-7 h-7 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 animate-ping shadow-[0_0_12px_rgba(52,211,153,0.6)] focus:outline-none transition-all duration-100 transform -translate-x-1/2 -translate-y-1/2"
+                                            title="Hit Target Grid Point"
+                                        />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* PREMIUM TO-DO LEDGER OPERATIONS SYSTEM */}
+                            <div className="glass-panel rounded-2xl border border-slate-800/80 flex flex-col flex-1 min-h-[250px] overflow-hidden">
+                                <div className="px-4 py-3 bg-slate-900/50 border-b border-slate-800 flex items-center justify-between">
+                                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono">Operations Ledger Parameters</span>
+                                    <span className="text-[10px] font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                                        {todos.filter(t => !t.completed).length} Remainder
+                                    </span>
+                                </div>
+
+                                <div className="flex-1 p-4 overflow-y-auto space-y-2">
+                                    {todos.map(todo => (
+                                        <div 
+                                            key={todo.id}
+                                            className={`flex items-center justify-between p-3 rounded-xl border transition-all ${todo.completed ? 'bg-slate-950/20 border-slate-900 opacity-40' : 'bg-slate-900/40 border-slate-800/50 hover:border-slate-700/50'}`}
+                                        >
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <input 
+                                                    type="checkbox"
+                                                    checked={todo.completed}
+                                                    onChange={() => handleCheckboxToggle(todo.id, todo.text, todo.completed)}
+                                                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-0 cursor-pointer"
+                                                />
+                                                <span className={`text-xs font-medium truncate ${todo.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                                                    {todo.text}
+                                                </span>
+                                            </div>
+                                            <button onClick={() => setTodos(prev => prev.filter(t => t.id !== todo.id))} className="text-slate-600 hover:text-rose-400 text-xs ml-2 font-mono">✕</button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <form onSubmit={addNewTask} className="p-3 bg-slate-900/40 border-t border-slate-800 flex gap-2">
+                                    <input 
+                                        type="text"
+                                        value={newTodoText}
+                                        onChange={(e) => setNewTodoText(e.target.value)}
+                                        placeholder="Add execution goal parameters..."
+                                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono placeholder-slate-600"
+                                    />
+                                    <button type="submit" className="px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded-xl transition-colors whitespace-nowrap font-mono">
+                                        Inject Task
+                                    </button>
+                                </form>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {/* HUD RUN ENGINE FOOTER DISPLAY REGISTER */}
+                    <footer className="mt-6 border-t border-slate-800/80 pt-4 flex flex-col sm:flex-row justify-between items-center text-[10px] font-mono text-slate-600 uppercase tracking-widest gap-2">
+                        <div>System Vector Stream: {lastAction}</div>
+                        <div>Continuous Session Uptime Runtime Buffer: {renderTime(totalRuntime)}</div>
+                    </footer>
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
